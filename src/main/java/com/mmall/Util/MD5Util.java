@@ -1,4 +1,4 @@
-package com.mmall.Util;
+package com.mmall.util;
 
 import java.security.MessageDigest;
 
