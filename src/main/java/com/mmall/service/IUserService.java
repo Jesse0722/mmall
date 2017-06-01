@@ -80,4 +80,6 @@ public interface IUserService {
      * @return
      */
     ServerResponse<User> getInformation(Integer userId);
+
+    ServerResponse checkAdminRole(User user);
 }

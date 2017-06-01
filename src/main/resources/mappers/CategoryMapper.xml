@@ -21,6 +21,17 @@
     from mmall_category
     where id = #{id,jdbcType=INTEGER}
   </select>
+    <select id="selectByParentId" resultMap="BaseResultMap" parameterType="int">
+      select
+      <include refid="Base_Column_List"/>
+      from mmall_category
+      where parentId = #{parentId}
+    </select>
+  <select id="selectIdByParentId"  parameterType="int" resultType="java.lang.Integer">
+      select id
+      from mmall_category
+      where parenId = #{parentId}
+  </select>
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from mmall_category
     where id = #{id,jdbcType=INTEGER}
