@@ -1,6 +1,7 @@
 package com.mmall.controller.backend;
 
 import com.mmall.common.Const;
+import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.User;
 import com.mmall.service.IUserService;
@@ -21,6 +22,7 @@ import javax.servlet.http.HttpSession;
 public class UserManageController {
     @Autowired
     private IUserService iUserService;
+
     @RequestMapping(value = "login.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<User> login(String username, String password, HttpSession session){
@@ -37,4 +39,29 @@ public class UserManageController {
         }
         return response;
     }
+
+    /***
+     * 管理员注册用户需要验证注册码
+     * @param user
+     * @return
+     */
+    @RequestMapping(value = "register.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<String> register(User user,String registerCode){
+        if(iUserService.checkRegisterCode(registerCode)){
+            return iUserService.register(user);
+        }
+        return ServerResponse.createByErrorMessage("注册码无效");
+    }
+
+    @RequestMapping(value = "generate_register_code.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<String> generateRegisterCode(HttpSession session){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登录,请先登录");
+        }
+        return iUserService.generateRegisterCode();
+    }
+
 }

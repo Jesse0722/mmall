@@ -82,4 +82,12 @@ public interface IUserService {
     ServerResponse<User> getInformation(Integer userId);
 
     ServerResponse checkAdminRole(User user);
+
+    /***
+     * 管理员用户注册，需要验证注册码，由系统管理员生成
+     * @return
+     */
+    ServerResponse<String> generateRegisterCode();
+
+    boolean checkRegisterCode(String registerCode);
 }

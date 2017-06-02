@@ -1,5 +1,7 @@
 package com.mmall.service.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.mmall.common.ServerResponse;
 import com.mmall.dao.CategoryMapper;
 import com.mmall.pojo.Category;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by lijiajun1-sal on 2017/6/1.
@@ -30,6 +33,9 @@ public class CategoryServiceImpl implements ICategoryService {
         //参数校验
         if(StringUtils.isBlank(categoryName)||parentId==null){
             return ServerResponse.createByErrorMessage("添加品类参数错误");
+        }
+        if(categoryMapper.selectByPrimaryKey(parentId)==null){
+            return ServerResponse.createByErrorMessage("parentId不存在");
         }
         Category category = new Category();
         category.setName(categoryName);
@@ -75,7 +81,33 @@ public class CategoryServiceImpl implements ICategoryService {
     }
 
     @Override
-    public ServerResponse<List<Integer>> getDeepChildrenId(Integer categoryId) {
-        return null;
+    public ServerResponse<List<Integer>> getDeepCategory(Integer categoryId) {
+        if(categoryId==null){
+            return ServerResponse.createByErrorMessage("参数错误");
+        }
+
+        List<Integer> childrenIdList = Lists.newArrayList();
+        Set<Category> categorySet = Sets.newHashSet();
+        categorySet = getChildrenCategory(categorySet,categoryId);
+        for(Category category:categorySet){
+            childrenIdList.add(category.getId());
+        }
+        return ServerResponse.createBySuccess(childrenIdList);
+    }
+
+    //递归算法，算出所有子节点
+    public Set<Category> getChildrenCategory(Set<Category> categorySet, Integer categoryId){
+        Category category = categoryMapper.selectByPrimaryKey(categoryId);
+        if(category!=null){
+            categorySet.add(category);
+        }
+        //查找子节点，mybatis如果没有查找到数据list，也不会返回null
+        List<Category> childrenCategoryList = categoryMapper.selectByParentId(categoryId);
+        if(CollectionUtils.isNotEmpty(childrenCategoryList)){
+            for(Category item : childrenCategoryList){
+                getChildrenCategory(categorySet,item.getId());
+            }
+        }
+        return categorySet;
     }
 }

@@ -180,4 +180,19 @@ public class UserServiceImpl implements IUserService {
         return ServerResponse.createByError();
     }
 
+    @Override
+    public ServerResponse<String> generateRegisterCode() {
+        String registerCode = UUID.randomUUID().toString();
+        TokenCache.setKey("RegisterCode:"+registerCode,registerCode);
+        return ServerResponse.createBySuccess(registerCode);
+    }
+
+    @Override
+    public boolean checkRegisterCode(String registerCode) {
+        if(registerCode==null||!registerCode.equals(TokenCache.getKey("RegisterCode:"+registerCode))){
+            return false;
+        }
+        return true;
+    }
+
 }

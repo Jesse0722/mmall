@@ -4,6 +4,7 @@ import com.mmall.common.ServerResponse;
 import com.mmall.pojo.Category;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by lijiajun1-sal on 2017/6/1.
@@ -15,6 +16,6 @@ public interface ICategoryService {
 
     ServerResponse<List<Category>> getChildrenParallelCategory(Integer categoryId);
 
-    ServerResponse<List<Integer>> getDeepChildrenId(Integer categoryId);
+    ServerResponse<List<Integer>> getDeepCategory(Integer categoryId);
 
 }
