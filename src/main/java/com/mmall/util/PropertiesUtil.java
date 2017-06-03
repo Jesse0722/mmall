@@ -25,6 +25,7 @@ public class PropertiesUtil {
         } catch (IOException e) {
             logger.error("配置文件读取异常",e);
         }
+
     }
 
     public static String getProperty(String key){
@@ -43,7 +44,4 @@ public class PropertiesUtil {
         }
         return value.trim();
     }
-
-
-
 }
