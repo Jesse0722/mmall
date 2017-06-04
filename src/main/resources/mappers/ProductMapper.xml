@@ -39,14 +39,30 @@
     from mmall_product
     <where>
     <if test="productName!=null">
-      and  name like #{name}
+      and  name like #{productName}
     </if>
     <if test="productId!=null">
-      and id = #{id}
+      and id = #{productId}
     </if>
     </where>
   </select>
-    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+  <select id="selectListByNameAndCategoryId" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM mmall_product
+    where status=1
+      <if test="name!=null">
+        and name LIKE #{name}
+      </if>
+      <if test="categoryIds!=null">
+        and category_id in
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="categoryIds">
+          #{item}
+        </foreach>
+      </if>
+
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from mmall_product
     where id = #{id,jdbcType=INTEGER}
   </delete>
