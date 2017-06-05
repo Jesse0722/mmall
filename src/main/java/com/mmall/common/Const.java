@@ -23,6 +23,14 @@ public class Const {
         Set<String> PRICE_ASC_DESC = Sets.newHashSet("price_asc","price_desc");
     }
 
+    public interface Cart{
+        int CHECKED=1;//购物车选中状态
+        int UNCHECKED=0;//未选中状态
+
+        String LIMIT_NUM_FAIL = "LIMIT_NUM_FAIL";
+        String LIMIT_NUM_SUCCESS = "LIMIT_NUM_SUCCESS";
+    }
+
     public enum ProductStatusEnum{
         ON_SALE("在线",1);
         private String value;
