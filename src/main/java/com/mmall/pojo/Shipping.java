@@ -21,13 +21,13 @@ public class Shipping {
 
     private String receiverAddress;
 
-    private String receriverZip;
+    private String receiverZip;
 
     private Date createTime;
 
     private Date updateTime;
 
-    public Shipping(Integer id, Integer userId, String receiverName, String receiverPhone, String receiverMobile, String receiverProvince, String receiverCity, String receiverDistrict, String receiverAddress, String receriverZip, Date createTime, Date updateTime) {
+    public Shipping(Integer id, Integer userId, String receiverName, String receiverPhone, String receiverMobile, String receiverProvince, String receiverCity, String receiverDistrict, String receiverAddress, String receiverZip, Date createTime, Date updateTime) {
         this.id = id;
         this.userId = userId;
         this.receiverName = receiverName;
@@ -37,7 +37,7 @@ public class Shipping {
         this.receiverCity = receiverCity;
         this.receiverDistrict = receiverDistrict;
         this.receiverAddress = receiverAddress;
-        this.receriverZip = receriverZip;
+        this.receiverZip = receiverZip;
         this.createTime = createTime;
         this.updateTime = updateTime;
     }
@@ -118,12 +118,12 @@ public class Shipping {
         this.receiverAddress = receiverAddress == null ? null : receiverAddress.trim();
     }
 
-    public String getReceriverZip() {
-        return receriverZip;
+    public String getReceiverZip() {
+        return receiverZip;
     }
 
-    public void setReceriverZip(String receriverZip) {
-        this.receriverZip = receriverZip == null ? null : receriverZip.trim();
+    public void setReceiverZip(String receiverZip) {
+        this.receiverZip = receiverZip == null ? null : receiverZip.trim();
     }
 
     public Date getCreateTime() {

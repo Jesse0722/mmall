@@ -86,4 +86,12 @@ public class Cart {
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
     }
+
+    @Override
+    public String toString(){
+        return  "Cart{userId="+userId+
+                ",productId="+productId+
+                ",quantity="+quantity+
+                ",checked="+checked+"}";
+    }
 }

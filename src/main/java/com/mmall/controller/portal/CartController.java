@@ -7,6 +7,8 @@ import com.mmall.pojo.Cart;
 import com.mmall.pojo.User;
 import com.mmall.service.ICartService;
 import com.mmall.vo.CartVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,16 +26,21 @@ import java.util.List;
 @RequestMapping("/cart/")
 public class CartController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CartController.class);
+
     @Autowired
     private ICartService iCartService;
 
     @RequestMapping(value = "add.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<CartVo> addCart(HttpSession session, Integer productId, Integer quantity){
+        logger.info("addCart:userId={},productId={},quantity={}",session.getId(),productId,quantity);
+
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user == null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),ResponseCode.NEED_LOGIN.getDesc());
         }
+
         return iCartService.add(user.getId(),productId,quantity);
     }
 
@@ -49,12 +56,12 @@ public class CartController {
 
     @RequestMapping(value = "delete_product.do",method = RequestMethod.POST)
     @ResponseBody
-    public ServerResponse<CartVo> deleteProduct(HttpSession session,Integer userId,String productIds){
+    public ServerResponse<CartVo> deleteProduct(HttpSession session,String productIds){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user == null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),ResponseCode.NEED_LOGIN.getDesc());
         }
-        return iCartService.deleteProduct(userId, productIds);
+        return iCartService.deleteProduct(user.getId(), productIds);
     }
 
     @RequestMapping(value = "list.do",method = RequestMethod.GET)
@@ -111,7 +118,7 @@ public class CartController {
     //获取购物车产品数量
     @RequestMapping(value = "get_cart_product_count.do",method = RequestMethod.GET)
     @ResponseBody
-    public ServerResponse<Integer> getCartProductCount(HttpSession session,Integer productId){
+    public ServerResponse<Integer> getCartProductCount(HttpSession session){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user == null){
             return ServerResponse.createBySuccess(0);

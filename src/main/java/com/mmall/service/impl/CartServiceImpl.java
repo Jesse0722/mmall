@@ -16,6 +16,8 @@ import com.mmall.vo.CartVo;
 import com.mmall.vo.CartProductVo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,8 @@ import java.util.List;
  */
 @Service("iCartService")
 public class CartServiceImpl  implements ICartService{
+
+    private static final Logger logger = LoggerFactory.getLogger(ICartService.class);
 
     @Autowired
     private CartMapper cartMapper;
@@ -47,7 +51,7 @@ public class CartServiceImpl  implements ICartService{
             cartItem.setProductId(productId);
             cartItem.setChecked(Const.Cart.CHECKED);
             cartItem.setQuantity(quantity);
-            cartMapper.insert(cart);
+            cartMapper.insert(cartItem);
         }else {
             //产品已经在购物车里，数量相加
             quantity = cart.getQuantity()+quantity;
@@ -87,11 +91,6 @@ public class CartServiceImpl  implements ICartService{
         if(userId==null|| CollectionUtils.isEmpty(productIdList)){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
         }
-        //String[] arr=productIds.split(",");
-//        for(String item : productIdList) {
-//            Integer productId=Integer.getInteger(item);
-//            cartMapper.deleteByUserIdAndProductId(userId,productId);//这里要执行多词数据库链接操作，效率低，将foreach写入sql中
-//        }
         cartMapper.deleteByUserIdAndProductIds(userId,productIdList);
         CartVo cartVo = this.getCartVoLimit(userId);
         return ServerResponse.createBySuccess(cartVo);

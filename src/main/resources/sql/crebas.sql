@@ -156,7 +156,7 @@ create table mmall_shipping
    receiver_city        varchar(20) DEFAULT NULL,
    receiver_district    varchar(20) DEFAULT NULL,
    receiver_address     varchar(200) DEFAULT NULL,
-   receriver_zip        varchar(6) DEFAULT NULL comment '” ±‡',
+   receiver_zip        varchar(6) DEFAULT NULL comment '” ±‡',
    create_time          datetime DEFAULT NULL,
    update_time          datetime DEFAULT NULL,
    primary key (id)
