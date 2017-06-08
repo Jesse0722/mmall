@@ -4,6 +4,7 @@ import com.mmall.common.Const;
 import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.Cart;
+import com.mmall.pojo.Shipping;
 import com.mmall.pojo.User;
 import com.mmall.service.ICartService;
 import com.mmall.vo.CartVo;
@@ -125,4 +126,5 @@ public class CartController {
         }
         return iCartService.getCartProductCount(user.getId());
     }
+
 }
