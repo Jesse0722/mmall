@@ -120,6 +120,17 @@
       </if>
     </trim>
   </insert>
+  <insert id="insertBatch" parameterType="map">
+    insert into mmall_order_item
+    <include refid="Base_Column_List"/>
+    values
+    <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+      (#{id,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}, #{orderNo,jdbcType=BIGINT},
+      #{productId,jdbcType=INTEGER}, #{productName,jdbcType=VARCHAR}, #{productImage,jdbcType=VARCHAR},
+      #{currentUnitPrice,jdbcType=DECIMAL}, #{quantity,jdbcType=INTEGER}, #{totalPrice,jdbcType=DECIMAL},
+      now(), now())
+    </foreach>
+  </insert>
   <update id="updateByPrimaryKeySelective" parameterType="com.mmall.pojo.OrderItem" >
     update mmall_order_item
     <set >

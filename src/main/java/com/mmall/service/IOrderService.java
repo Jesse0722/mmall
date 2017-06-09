@@ -1,11 +1,9 @@
 package com.mmall.service;
 
+import com.github.pagehelper.PageInfo;
 import com.mmall.common.ServerResponse;
-import com.mmall.pojo.Order;
 import com.mmall.vo.OrderDetailVo;
-import com.mmall.vo.OrderListVo;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,11 +12,15 @@ import java.util.Map;
 public interface IOrderService {
     ServerResponse<Map> pay(Integer userId,Long orderNo,String path);
 
-    ServerResponse<String> create(Integer userId,Integer shippingId);
+    ServerResponse<Long> create(Integer userId,Integer shippingId);
 
-    ServerResponse<List<OrderListVo>> list(Integer userId);
+    ServerResponse<PageInfo> list(Integer userId, int pageNum, int pageSize);
 
-    ServerResponse<OrderDetailVo> detail(Integer userId, Integer orderNo);
+    ServerResponse<OrderDetailVo> detail(Integer userId, Long orderNo);
 
-    ServerResponse<String> cancel(Integer userId,Integer orderNo);
+    ServerResponse<String> cancel(Integer userId,Long orderNo);
+
+    ServerResponse<String> alipayCallback(Map<String,String> params);
+
+    ServerResponse<Boolean> queryOrderPayStatus(Integer userId,Long orderId);
 }

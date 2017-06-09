@@ -22,7 +22,7 @@ public interface CartMapper {
 
     Cart selectByUserIdAndProductId(@Param("userId") Integer userId,@Param("productId") Integer productId);
 
-    int selectCartProductCheckedStatusByUserId(Integer userId);
+    int checkCartProductIsAllChecked(Integer userId);
 
     int deleteByUserIdAndProductIds(@Param("userId") Integer userId,@Param("productIdList") List<String> productIds);
 
@@ -31,4 +31,6 @@ public interface CartMapper {
     int checkedOrUncheckedProduct(@Param("userId") Integer userId,@Param("checked")Integer checked,@Param("productId") Integer productId);
 
     int selectCartProductCount(Integer userId);
+
+    List<Cart> selectCartProductCheckedByUserId(Integer userId);
 }

@@ -3,19 +3,19 @@ package com.mmall.controller.portal;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.demo.trade.config.Configs;
+import com.github.pagehelper.PageInfo;
 import com.mmall.common.Const;
 import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.Order;
 import com.mmall.pojo.User;
 import com.mmall.service.IOrderService;
+import com.mmall.vo.OrderDetailVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -54,7 +54,6 @@ public class OrderController {
         //第三步： 将签名参数（sign）使用base64解码为字节码串。
         //第四步： 使用RSA的验签方法，通过签名字符串、签名参数（经过base64解码）及支付宝公钥验证签名。
         //第五步：需要严格按照如下描述校验通知数据的正确性。
-
         //商户需要验证该通知数据中的out_trade_no是否为商户系统中创建的订单号，并判断total_amount是否确实为该订单的实际金额（即商户订单创建时的金额），
         // 同时需要校验通知中的seller_id（或者seller_email) 是否为out_trade_no这笔单据的对应的操作方（有的时候，一个商户可能有多个seller_id/seller_email），
         // 上述有任何一个验证不通过，则表明本次通知是异常通知，务必忽略。在上述验证通过后商户必须根据支付宝不同类型的业务通知，正确的进行不同的业务处理，
@@ -76,12 +75,32 @@ public class OrderController {
         } catch (AlipayApiException e) {
             logger.error("支付宝验证回调异常",e);
         }
-        //todo 验证各种数据是否正确
-        return null;
+        // 第五步验证各种数据是否正确
+        ServerResponse response = iOrderService.alipayCallback(requestParams);
+        if(response.isSuccess()){
+            return Const.AlipayResponse.SUCCESS;
+        }
+        return Const.AlipayResponse.FAIL;
     }
 
+    @RequestMapping(value = "query_order_pay_status.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session,Long orderId){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        }
+        ServerResponse response = iOrderService.queryOrderPayStatus(user.getId(),orderId);
+        if(response.isSuccess()){
+            return ServerResponse.createBySuccess(true);
+        }
+        return ServerResponse.createBySuccess(false);
+    }
+
+
     @RequestMapping(value = "create.do",method = RequestMethod.POST)
-    public ServerResponse create(HttpSession session, Integer shippingId){
+    @ResponseBody
+    public ServerResponse<Long> create(HttpSession session, Integer shippingId){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
@@ -90,19 +109,33 @@ public class OrderController {
     }
 
     @RequestMapping(value = "cancel.do",method = RequestMethod.POST)
-    public ServerResponse cancel(HttpSession session, Order order){
-        return null;
+    public ServerResponse<String> cancel(HttpSession session, Long orderId){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        }
+        return iOrderService.cancel(user.getId(),orderId);
     }
 
 
     @RequestMapping(value = "list.do",method = RequestMethod.GET)
-    public ServerResponse list(HttpSession session){
-        return null;
+    @ResponseBody
+    public ServerResponse<PageInfo> list(HttpSession session, @RequestParam(value = "pageNum",defaultValue = "1") int pageNum, @RequestParam(value = "pageSize",defaultValue = "10")int pageSize){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        }
+        return iOrderService.list(user.getId(),pageNum,pageSize);
     }
 
     @RequestMapping(value = "detail.do",method = RequestMethod.GET)
-    public ServerResponse detail(HttpSession session, Integer orderId){
-        return null;
+    @ResponseBody
+    public ServerResponse<OrderDetailVo> detail(HttpSession session, Long orderId){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        }
+        return iOrderService.detail(user.getId(),orderId);
     }
 
 }

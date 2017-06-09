@@ -8,41 +8,37 @@ import com.alipay.demo.trade.model.ExtendParams;
 import com.alipay.demo.trade.model.GoodsDetail;
 import com.alipay.demo.trade.model.builder.AlipayTradePrecreateRequestBuilder;
 import com.alipay.demo.trade.model.result.AlipayF2FPrecreateResult;
-import com.alipay.demo.trade.service.AlipayMonitorService;
 import com.alipay.demo.trade.service.AlipayTradeService;
-import com.alipay.demo.trade.service.impl.AlipayMonitorServiceImpl;
 import com.alipay.demo.trade.service.impl.AlipayTradeServiceImpl;
-import com.alipay.demo.trade.service.impl.AlipayTradeWithHBServiceImpl;
 import com.alipay.demo.trade.utils.ZxingUtils;
-import com.google.common.base.Splitter;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.mmall.common.Const;
 import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
-import com.mmall.dao.CartMapper;
-import com.mmall.dao.OrderItemMapper;
-import com.mmall.dao.OrderMapper;
-import com.mmall.dao.ShippingMapper;
-import com.mmall.pojo.Cart;
-import com.mmall.pojo.Order;
-import com.mmall.pojo.OrderItem;
-import com.mmall.pojo.Shipping;
+import com.mmall.dao.*;
+import com.mmall.pojo.*;
 import com.mmall.service.IOrderService;
 import com.mmall.util.BigDecimalUtil;
+import com.mmall.util.DateTimeUtil;
 import com.mmall.util.FTPUtil;
 import com.mmall.util.PropertiesUtil;
 import com.mmall.vo.OrderDetailVo;
-import com.mmall.vo.OrderListVo;
+import com.mmall.vo.OrderVo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -56,11 +52,23 @@ public class OrderServiceImpl implements IOrderService {
 
     private static AlipayTradeService tradeService;
 
-    // 支付宝当面付2.0服务（集成了交易保障接口逻辑）
-    private static AlipayTradeService   tradeWithHBService;
+    @Autowired
+    private OrderItemMapper orderItemMapper;
 
-    // 支付宝交易保障接口服务，供测试接口api使用，请先阅读readme.txt
-    private static AlipayMonitorService monitorService;
+    @Autowired
+    private OrderMapper orderMapper;
+
+    @Autowired
+    private ShippingMapper shippingMapper;
+
+    @Autowired
+    private PayInfoMapper payInfoMapper;
+
+    @Autowired
+    private CartMapper cartMapper;
+
+    @Autowired
+    private ProductMapper productMapper;
 
     static{
         /** 一定要在创建AlipayTradeService之前调用Configs.init()设置默认参数
@@ -72,24 +80,9 @@ public class OrderServiceImpl implements IOrderService {
          *  AlipayTradeService可以使用单例或者为静态成员对象，不需要反复new
          */
         tradeService = new AlipayTradeServiceImpl.ClientBuilder().build();
-
-        // 支付宝当面付2.0服务（集成了交易保障接口逻辑）
-        tradeWithHBService = new AlipayTradeWithHBServiceImpl.ClientBuilder().build();
-
-        /** 如果需要在程序中覆盖Configs提供的默认参数, 可以使用ClientBuilder类的setXXX方法修改默认参数 否则使用代码中的默认设置 */
-        monitorService = new AlipayMonitorServiceImpl.ClientBuilder()
-                .setGatewayUrl("http://mcloudmonitor.com/gateway.do").setCharset("GBK")
-                .setFormat("json").build();
     }
 
-    @Autowired
-    private OrderItemMapper orderItemMapper;
 
-    @Autowired
-    private OrderMapper orderMapper;
-
-    @Autowired
-    private ShippingMapper shippingMapper;
 
     @Override
     public ServerResponse<Map> pay(Integer userId, Long orderNo, String path) {
@@ -204,8 +197,17 @@ public class OrderServiceImpl implements IOrderService {
             logger.info("body:" + response.getBody());
         }
     }
+
+
+    /***
+     * 创建订单：为每个商品创建订单单项OrderItem,修改每个商品Product库存，创建一个订单Order，此过程应该是事务处理
+     * @param userId
+     * @param shippingId
+     * @return
+     */
+    @Transactional
     @Override
-    public ServerResponse<String> create(Integer userId, Integer shippingId) {
+    public ServerResponse<Long> create(Integer userId, Integer shippingId) {
         //地址必须要属于当前登录用户
         if(userId==null||shippingId==null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
@@ -214,32 +216,230 @@ public class OrderServiceImpl implements IOrderService {
         if(shipping==null) {
             return ServerResponse.createByErrorMessage("收货地址信息错误");
         }
-        //生成orderNo、计算金额、
-        //根据userId和orderNo 找出orderItem
+        //创建订单：结算当前购物车已勾选的商品
+        List<Cart> checkedCartList = cartMapper.selectCartProductCheckedByUserId(userId);
+        List<OrderItem> orderItemList = Lists.newArrayList();
+        List<Product> productList = Lists.newArrayList();
 
+        BigDecimal payment = new BigDecimal("0");
+        Long orderNo = this.generateOrderNo();
+        for(Cart cart : checkedCartList){
+            Product product = productMapper.selectByPrimaryKey(cart.getProductId());
+            //如果商品在线且同时库存也要足够
+            if(product.getStatus()==1&&product.getStock()>cart.getQuantity()) {
+                product.setStock(product.getStock() - cart.getQuantity());//商品减库存
+                productList.add(product);
+                //生成商品订单单项
+                OrderItem orderItem = new OrderItem();
+                orderItem.setUserId(userId);
+                orderItem.setOrderNo(orderNo);
+                orderItem.setProductId(cart.getProductId());
+                orderItem.setProductName(product.getName());
+                orderItem.setProductImage(product.getMainImage());
+                orderItem.setCurrentUnitPrice(product.getPrice());
+                orderItem.setQuantity(cart.getQuantity());
+                orderItem.setTotalPrice(BigDecimalUtil.mul(product.getPrice().doubleValue(), cart.getQuantity()));
+                orderItemList.add(orderItem);
+                //累计商品总价
+                payment = BigDecimalUtil.add(orderItem.getTotalPrice().doubleValue(), payment.doubleValue());
+            }
+        }
+        //批量更新库存
+        productMapper.updateStockByList(productList);
+        //批量插入订单单项
+        int insertCount = orderItemMapper.insertBatch(orderItemList);
+        if(insertCount==0){
+            //抛出异常创建订单单项失败
+        }
+        //创建订单
+        Order order  = new Order();
+        order.setOrderNo(orderNo);
+        order.setUserId(userId);
+        order.setShippingId(shippingId);
+        order.setPayment(payment);
+        order.setPaymentType(1);
+        order.setPostage(10);
+        order.setStatus(Const.OrderStatusEnum.NO_PAY.getCode());
 
-        return null;
+        insertCount = orderMapper.insert(order);
+        if(insertCount==0){
+            //订单创建异常
+        }
+
+        return ServerResponse.createBySuccess(orderNo);
     }
 
+    private Long generateOrderNo(){
+        return System.currentTimeMillis() + (long) (Math.random() * 10000000L);
+    }
+
+    /***
+     * 获取订单列表
+     * @param userId
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
     @Override
-    public ServerResponse<List<OrderListVo>> list(Integer userId) {
-        return null;
+    public ServerResponse<PageInfo> list(Integer userId, int pageNum, int pageSize) {
+        //获取订单列表
+        PageHelper.startPage(pageNum,pageSize);
+        List<Order> orderList = orderMapper.selectByUserId(userId);
+
+        List<OrderVo> orderVoList = Lists.newArrayList();
+        if(CollectionUtils.isNotEmpty(orderList)){
+            for(Order order : orderList){
+                //组装OrderVo
+                List<OrderItem> orderItemList = orderItemMapper.selectByUserIdAndOrderNo(userId,order.getOrderNo());
+                OrderVo orderVo = this.assembleOrderVo(order,orderItemList);
+                orderVoList.add(orderVo);
+            }
+        }
+        PageInfo pageInfo = new PageInfo(orderList);
+        pageInfo.setList(orderVoList);
+        return ServerResponse.createBySuccess(pageInfo);
     }
 
-    @Override
-    public ServerResponse<OrderDetailVo> detail(Integer userId, Integer orderNo) {
-        return null;
+    private OrderVo assembleOrderVo(Order order,List<OrderItem> orderItemList){
+        OrderVo orderVo = new OrderVo();
+        orderVo.setOrderNo(order.getOrderNo());
+        orderVo.setStatus(order.getStatus());
+        orderVo.setPayment(order.getPayment());
+        orderVo.setPostage(order.getPostage());
+        orderVo.setPaymentType(order.getPaymentType());
+        orderVo.setCreateTime(order.getCreateTime());
+        orderVo.setEndTime(order.getEndTime());
+        orderVo.setPaymentTime(order.getPaymentTime());
+        orderVo.setCloseTime(order.getCloseTime());
+        orderVo.setSendTime(order.getSendTime());
+        orderVo.setOrderItemList(orderItemList);
+        orderVo.setShippingId(order.getShippingId());
+
+        return orderVo;
     }
 
-    @Override
-    public ServerResponse<String> cancel(Integer userId, Integer orderNo) {
-        return null;
+    private OrderDetailVo assembleOrderDetailVo(Order order,List<OrderItem> orderItemList,Integer shippingId){
+        OrderDetailVo orderDetailVo =  new OrderDetailVo();
+        orderDetailVo.setOrderNo(order.getOrderNo());
+        orderDetailVo.setStatus(order.getStatus());
+        orderDetailVo.setPayment(order.getPayment());
+        orderDetailVo.setPostage(order.getPostage());
+        orderDetailVo.setPaymentType(order.getPaymentType());
+        orderDetailVo.setCreateTime(order.getCreateTime());
+        orderDetailVo.setEndTime(order.getEndTime());
+        orderDetailVo.setPaymentTime(order.getPaymentTime());
+        orderDetailVo.setCloseTime(order.getCloseTime());
+        orderDetailVo.setSendTime(order.getSendTime());
+        orderDetailVo.setOrderItemList(orderItemList);
+        orderDetailVo.setShippingId(order.getShippingId());
+
+        Shipping shipping = shippingMapper.selectByPrimaryKey(order.getShippingId());
+        orderDetailVo.setShipping(shipping);
+
+        return orderDetailVo;
     }
+
+    /***
+     * 获取订单详情：地址信息，订单信息，商品列表信息
+     * @param userId
+     * @param orderNo
+     * @return
+     */
+    @Override
+    public ServerResponse<OrderDetailVo> detail(Integer userId, Long orderNo) {
+        Order order = orderMapper.selectByUserIdAndOrderNo(userId,orderNo);
+        List<OrderItem> orderItemList = orderItemMapper.selectByUserIdAndOrderNo(userId,orderNo);
+        OrderDetailVo orderDetailVo = this.assembleOrderDetailVo(order,orderItemList,order.getShippingId());
+        return ServerResponse.createBySuccess(orderDetailVo);
+    }
+
+    /***
+     * 取消订单：订单状态修改为已取消，同时需要恢复商品原有库存，事务处理
+     * @param userId
+     * @param orderNo
+     * @return
+     */
+    @Transactional
+    @Override
+    public ServerResponse<String> cancel(Integer userId, Long orderNo) {
+        Order order = orderMapper.selectByUserIdAndOrderNo(userId,orderNo);
+        if(order==null){
+            return ServerResponse.createByErrorMessage("取消订单信息错误");
+        }
+        order.setStatus(Const.OrderStatusEnum.CANCEL.getCode());
+        int resultCount = orderMapper.updateByPrimaryKeySelective(order);
+        if(resultCount>0){
+            //取消成功，更改库存状态
+            List<OrderItem> orderItemList = orderItemMapper.selectByUserIdAndOrderNo(userId,orderNo);
+            List<Product> productList = Lists.newArrayList();
+            for(OrderItem orderItem:orderItemList){
+                Product product = productMapper.selectByPrimaryKey(orderItem.getProductId());
+                product.setStock(product.getStock()+orderItem.getQuantity());
+                productList.add(product);
+            }
+            productMapper.updateStockByList(productList);
+            return ServerResponse.createBySuccessMessage("取消订单成功");
+        }
+        return ServerResponse.createBySuccessMessage("取消订单失败");
+    }
+
 
     /***
      * 当支付宝回调验证通过是，自己也对参数交易号、进行验证
      * @param params
      * @return
      */
+    @Override
+    public ServerResponse<String> alipayCallback(Map<String,String> params) {
+        Long outTradeNo = Long.parseLong(params.get("out_trade_no"));
+        String totalAmount = params.get("total_amount");
+        String tradeStatus = params.get("trade_status");
+        String tradeNo = params.get("trade_no");//支付宝交易号，交易成功需持久化到payInfo
 
+        Order  order = orderMapper.selectByOrderNo(new Long(outTradeNo).longValue());
+        if(order==null){
+            return ServerResponse.createByErrorMessage("订单号不存在，验证失败");
+        }
+        //判断订单状态：如果订单已经是支付过了，则回复success，通知支付宝不要再通知了
+        if(order.getStatus()>=Const.OrderStatusEnum.PAID.getCode()){
+            return ServerResponse.createBySuccess("订单已支付，请勿重复通知");
+        }
+        //判断支付状态,如果是支付成功则更改订单状态
+        if(Const.AlipayTradeStatus.TRADE_SUCCESS.equals(tradeStatus)){
+            order.setStatus(Const.OrderStatusEnum.PAID.getCode());
+            order.setPaymentTime(DateTimeUtil.strToDate(params.get("gmt_payment")));
+            orderMapper.updateByPrimaryKey(order);
+        }
+        //创建支付信息记录，每次回调都创建一条支付信息
+        PayInfo payInfo = new PayInfo();
+        payInfo.setUserId(order.getId());
+        payInfo.setOrderNo(order.getOrderNo());
+        payInfo.setPayPlatform(Const.PayPlatform.ALIPAY.getCode());
+        payInfo.setPlatformStatus(tradeStatus);
+        payInfo.setPlatformMumber(tradeNo);
+        payInfoMapper.insert(payInfo);
+
+        return  ServerResponse.createBySuccess();
+    }
+
+    /***
+     * 查看订单支付状态
+     * @param userId
+     * @param orderId
+     * @return
+     */
+    @Override
+    public ServerResponse<Boolean> queryOrderPayStatus(Integer userId,Long orderId){
+        if(userId==null||orderId==null){
+            return ServerResponse.createByErrorMessage("参数错误");
+        }
+        Order order = orderMapper.selectByUserIdAndOrderNo(userId, orderId);
+        if(order == null){
+            return ServerResponse.createByErrorMessage("无此订单信息");
+        }
+        if(order.getStatus()>=Const.OrderStatusEnum.PAID.getCode()){
+            return ServerResponse.createBySuccess();
+        }
+        return ServerResponse.createByError();
+    }
 }

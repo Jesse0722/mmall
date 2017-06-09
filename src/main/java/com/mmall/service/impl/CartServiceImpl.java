@@ -15,7 +15,6 @@ import com.mmall.util.PropertiesUtil;
 import com.mmall.vo.CartVo;
 import com.mmall.vo.CartProductVo;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,7 +188,7 @@ public class CartServiceImpl  implements ICartService{
         if(userId ==null){
             return false;
         }
-        return cartMapper.selectCartProductCheckedStatusByUserId(userId) == 0;
+        return cartMapper.checkCartProductIsAllChecked(userId) == 0;
     }
 
 
