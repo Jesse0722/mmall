@@ -64,7 +64,14 @@
       </foreach>
     </if>
   </delete>
-  <insert id="insert" parameterType="com.mmall.pojo.Cart" >
+    <delete id="deleteBatch" parameterType="list">
+      delete from mmall_cart
+        where id in
+        <foreach collection="productIdList" item="item" index="index" open="(" separator="," close=")">
+          #{item.id}
+        </foreach>
+    </delete>
+    <insert id="insert" parameterType="com.mmall.pojo.Cart" >
     insert into mmall_cart (id, user_id, product_id, 
       quantity, checked, create_time, 
       update_time)

@@ -212,7 +212,7 @@
     where id = #{id,jdbcType=INTEGER}
   </update>
   <update id="updateStockByList" parameterType="map">
-    <foreach collection="list" item="item" index="index" open="" close=""  separator=";">
+    <foreach collection="list" item="item" index="index" separator=";">
       update mmall_product
       <set>
         stock=#{item.stock},

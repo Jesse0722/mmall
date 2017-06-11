@@ -11,6 +11,7 @@ import com.mmall.pojo.Order;
 import com.mmall.pojo.User;
 import com.mmall.service.IOrderService;
 import com.mmall.vo.OrderDetailVo;
+import com.mmall.vo.OrderVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +101,7 @@ public class OrderController {
 
     @RequestMapping(value = "create.do",method = RequestMethod.POST)
     @ResponseBody
-    public ServerResponse<Long> create(HttpSession session, Integer shippingId){
+    public ServerResponse<OrderVo> create(HttpSession session, Integer shippingId){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
@@ -130,12 +131,12 @@ public class OrderController {
 
     @RequestMapping(value = "detail.do",method = RequestMethod.GET)
     @ResponseBody
-    public ServerResponse<OrderDetailVo> detail(HttpSession session, Long orderId){
+    public ServerResponse<OrderDetailVo> detail(HttpSession session, Long orderNo){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
         }
-        return iOrderService.detail(user.getId(),orderId);
+        return iOrderService.detail(user.getId(),orderNo);
     }
 
 }

@@ -30,9 +30,13 @@
       SELECT
       <include refid="Base_Column_List"/>
       FROM mmall_order_item
-      where user_id=#{userId}
+      <where>
+      <if test="userId!=null">
+        and user_id=#{userId}
+      </if>
       and order_no =#{orderNo}
-    </select>
+      </where>
+</select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from mmall_order_item
     where id = #{id,jdbcType=INTEGER}
@@ -120,15 +124,19 @@
       </if>
     </trim>
   </insert>
-  <insert id="insertBatch" parameterType="map">
+  <insert id="insertBatch" parameterType="list">
     insert into mmall_order_item
-    <include refid="Base_Column_List"/>
+    (id, user_id, order_no,
+    product_id, product_name, product_image,
+    current_unit_price, quantity, total_price,
+    create_time, update_time)
     values
-    <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
-      (#{id,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}, #{orderNo,jdbcType=BIGINT},
-      #{productId,jdbcType=INTEGER}, #{productName,jdbcType=VARCHAR}, #{productImage,jdbcType=VARCHAR},
-      #{currentUnitPrice,jdbcType=DECIMAL}, #{quantity,jdbcType=INTEGER}, #{totalPrice,jdbcType=DECIMAL},
-      now(), now())
+    <foreach collection="orderItemList" item="item" index="index" separator=",">
+      (
+        #{item.id},#{item.userId},#{item.orderNo},#{item.productId},#{item.productName},
+      #{item.productImage},#{item.currentUnitPrice},#{item.quantity},#{item.totalPrice},
+      #{item.createTime},now()
+      )
     </foreach>
   </insert>
   <update id="updateByPrimaryKeySelective" parameterType="com.mmall.pojo.OrderItem" >

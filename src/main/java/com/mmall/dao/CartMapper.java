@@ -33,4 +33,6 @@ public interface CartMapper {
     int selectCartProductCount(Integer userId);
 
     List<Cart> selectCartProductCheckedByUserId(Integer userId);
+
+    int deleteBatch(@Param("cartList") List<Cart> cartList);
 }

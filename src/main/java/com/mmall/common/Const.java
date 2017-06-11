@@ -131,4 +131,37 @@ public class Const {
             this.code = code;
         }
     }
+
+    public enum PlaymentType{
+        PAY_ONLINE("在线支付",1);
+
+        private String value;
+        private int code;
+        PlaymentType(String value,int code){
+            this.value=value;
+            this.code=code;
+        }
+
+        public static PlaymentType codeOf(int code){
+            for(PlaymentType playmentType:values()){
+                if(playmentType.getCode()==code){
+                    return playmentType;
+                }
+            }
+            throw new RuntimeException("支付方式不存在");
+        }
+
+        public String getValue() {
+            return value;
+        }
+        public void setValue(String value) {
+            this.value = value;
+        }
+        public int getCode() {
+            return code;
+        }
+        public void setCode(int code) {
+            this.code = code;
+        }
+    }
 }

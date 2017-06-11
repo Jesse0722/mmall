@@ -22,18 +22,21 @@ public class OrderVo {
 //           "receiverDistrict":null,"receiverAddress":"渝北区松石北路232号东和春天B1","receiverZip":"400056"}},
 
     private Long orderNo;
-    private Integer shippingId;
     private BigDecimal payment;
     private Integer paymentType;
+    private String paymentTypeDesc;
     private Integer postage;
     private Integer status;
-    private Date paymentTime;
-    private Date sendTime;
-    private Date endTime;
-    private Date closeTime;
-    private Date createTime;
+    private String paymentTime;
+    private String sendTime;
+    private String endTime;
+    private String closeTime;
+    private String createTime;
 
     private List<OrderItem> orderItemList;
+
+    private String imageHost;
+    private Integer shippingId;
 
     public Long getOrderNo() {
         return orderNo;
@@ -62,7 +65,13 @@ public class OrderVo {
     public Integer getPaymentType() {
         return paymentType;
     }
+    public String getPaymentTypeDesc() {
+        return paymentTypeDesc;
+    }
 
+    public void setPaymentTypeDesc(String paymentTypeDesc) {
+        this.paymentTypeDesc = paymentTypeDesc;
+    }
     public void setPaymentType(Integer paymentType) {
         this.paymentType = paymentType;
     }
@@ -83,43 +92,43 @@ public class OrderVo {
         this.status = status;
     }
 
-    public Date getPaymentTime() {
+    public String getPaymentTime() {
         return paymentTime;
     }
 
-    public void setPaymentTime(Date paymentTime) {
+    public void setPaymentTime(String paymentTime) {
         this.paymentTime = paymentTime;
     }
 
-    public Date getSendTime() {
+    public String getSendTime() {
         return sendTime;
     }
 
-    public void setSendTime(Date sendTime) {
+    public void setSendTime(String sendTime) {
         this.sendTime = sendTime;
     }
 
-    public Date getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Date endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
-    public Date getCloseTime() {
+    public String getCloseTime() {
         return closeTime;
     }
 
-    public void setCloseTime(Date closeTime) {
+    public void setCloseTime(String closeTime) {
         this.closeTime = closeTime;
     }
 
-    public Date getCreateTime() {
+    public String getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(Date createTime) {
+    public void setCreateTime(String createTime) {
         this.createTime = createTime;
     }
 
@@ -130,4 +139,13 @@ public class OrderVo {
     public void setOrderItemList(List<OrderItem> orderItemList) {
         this.orderItemList = orderItemList;
     }
+
+    public String getImageHost() {
+        return imageHost;
+    }
+
+    public void setImageHost(String imageHost) {
+        this.imageHost = imageHost;
+    }
+
 }
