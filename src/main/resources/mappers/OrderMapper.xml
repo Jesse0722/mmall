@@ -46,15 +46,20 @@
     SELECT
     <include refid="Base_Column_List"/>
     from mmall_order
-    <if test="userId!=null">
       WHERE user_id=#{userId}
-    </if>
+    order by create_time desc
   </select>
-  <select id="searchByOrderNo" resultMap="BaseResultMap" parameterType="String">
+  <select id="searchByOrderNo" resultMap="BaseResultMap" parameterType="Long">
     select
     <include refid="Base_Column_List"/>
     from mmall_order
     WHERE order_no like #{orderNo}
+  </select>
+  <select id="selectAllOrder" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    from mmall_order
+    order by create_time desc
   </select>
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from mmall_order

@@ -4,6 +4,7 @@ import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.demo.trade.config.Configs;
 import com.github.pagehelper.PageInfo;
+import com.google.common.collect.Maps;
 import com.mmall.common.Const;
 import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
@@ -11,6 +12,7 @@ import com.mmall.pojo.Order;
 import com.mmall.pojo.User;
 import com.mmall.service.IOrderService;
 import com.mmall.vo.OrderDetailVo;
+import com.mmall.vo.OrderProductVo;
 import com.mmall.vo.OrderVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,7 @@ public class OrderController {
     @Autowired
     private IOrderService iOrderService;
 
-    @RequestMapping("/pay")
+    @RequestMapping(value = "pay.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse pay(HttpSession session, Long orderNo, HttpServletRequest request){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
@@ -47,7 +49,13 @@ public class OrderController {
         return iOrderService.pay(user.getId(),orderNo,path);
     }
 
-    @RequestMapping("alipay_callback.do")
+    @RequestMapping("callback_test.do")
+    @ResponseBody
+    public String hello(){
+        return "hello world";
+    }
+
+    @RequestMapping(value = "alipay_callback.do",method = RequestMethod.POST)
     @ResponseBody
     public Object alipayCallback(HttpServletRequest request){
         //第一步： 在通知返回参数列表中，除去sign、sign_type两个参数外，凡是通知返回回来的参数皆是待验签的参数。
@@ -59,23 +67,28 @@ public class OrderController {
         // 同时需要校验通知中的seller_id（或者seller_email) 是否为out_trade_no这笔单据的对应的操作方（有的时候，一个商户可能有多个seller_id/seller_email），
         // 上述有任何一个验证不通过，则表明本次通知是异常通知，务必忽略。在上述验证通过后商户必须根据支付宝不同类型的业务通知，正确的进行不同的业务处理，
         // 并且过滤重复的通知结果数据。在支付宝的业务通知中，只有交易通知状态为TRADE_SUCCESS或TRADE_FINISHED时，支付宝才会认定为买家付款成功。
-        Map requestParams = request.getParameterMap();
+        Map requestParams = Maps.newHashMap( request.getParameterMap());
         for(Iterator iterator=requestParams.keySet().iterator();iterator.hasNext();){
             String name = (String) iterator.next();
-            String value = (String) requestParams.get(name);
-            requestParams.put(name,value);
+            String[] value = (String[]) requestParams.get(name);
+            String valueStr="";
+            for(int i=0;i<value.length;i++){
+                valueStr += (i==value.length-1)?value[i]:value[i]+",";
+            }
+            requestParams.put(name,valueStr);
         }
         logger.info("支付宝回调，sign:{}，trade_status:{}，参数：{}",requestParams.get("sign"),requestParams.get("trade_status"),requestParams.toString());
         //验证回调，且避免重复通知
         requestParams.remove("sign_type");//签名类型写在配置文件中了，此处移除
         try {
-            boolean alipayRSACheckedV2 = AlipaySignature.rsaCheckV2(requestParams, Configs.getPublicKey(),"utf-8",Configs.getSignType());
+            boolean alipayRSACheckedV2 = AlipaySignature.rsaCheckV2(requestParams, Configs.getAlipayPublicKey(),"utf-8",Configs.getSignType());
             if(!alipayRSACheckedV2){
                 return ServerResponse.createByErrorMessage("非法请求，验证不通过");
             }
         } catch (AlipayApiException e) {
             logger.error("支付宝验证回调异常",e);
         }
+        logger.info("RSA2验证通过，正在进行本地数据校验...");
         // 第五步验证各种数据是否正确
         ServerResponse response = iOrderService.alipayCallback(requestParams);
         if(response.isSuccess()){
@@ -86,12 +99,12 @@ public class OrderController {
 
     @RequestMapping(value = "query_order_pay_status.do",method = RequestMethod.GET)
     @ResponseBody
-    public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session,Long orderId){
+    public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session,Long orderNo){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
         }
-        ServerResponse response = iOrderService.queryOrderPayStatus(user.getId(),orderId);
+        ServerResponse response = iOrderService.queryOrderPayStatus(user.getId(),orderNo);
         if(response.isSuccess()){
             return ServerResponse.createBySuccess(true);
         }
@@ -110,6 +123,7 @@ public class OrderController {
     }
 
     @RequestMapping(value = "cancel.do",method = RequestMethod.POST)
+    @ResponseBody
     public ServerResponse<String> cancel(HttpSession session, Long orderId){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
@@ -137,6 +151,16 @@ public class OrderController {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
         }
         return iOrderService.detail(user.getId(),orderNo);
+    }
+
+    @RequestMapping(value = "get_order_cart_product.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<OrderProductVo> getOrderCartProduct(HttpSession session){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        }
+        return iOrderService.getOrderCartProduct(user.getId());
     }
 
 }

@@ -6,6 +6,7 @@ import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.User;
 import com.mmall.service.IOrderService;
+import com.mmall.service.IUserService;
 import com.mmall.vo.OrderDetailVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,24 +27,37 @@ public class OrderManageController {
     @Autowired
     private IOrderService iOrderService;
 
+   @Autowired
+   private IUserService iUserService;
+
     @RequestMapping(value = "list.do",method = RequestMethod.GET)
     @ResponseBody
-    public ServerResponse<PageInfo> list(HttpSession session, @RequestParam(value = "pageNum",defaultValue = "1") int pageNum, @RequestParam(value = "pageSize",defaultValue = "10")int pageSize){
+    public ServerResponse<PageInfo> list(HttpSession session,
+                                         @RequestParam(value = "pageNum",defaultValue = "1") int pageNum,
+                                         @RequestParam(value = "pageSize",defaultValue = "10")int pageSize){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
-        if(user==null) {
-            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        if(user==null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登录,请先登录");
         }
-        return iOrderService.list(null,pageNum,pageSize);
+        if(iUserService.checkAdminRole(user).isSuccess()){
+            return iOrderService.manageList(pageNum,pageSize);
+        }
+        return ServerResponse.createByErrorMessage("当前用户没有权限");
     }
 
     @RequestMapping(value = "search.do",method = RequestMethod.GET)
     @ResponseBody
-    public ServerResponse<PageInfo> search(HttpSession session, @RequestParam(value = "pageNum",defaultValue = "1") int pageNum, @RequestParam(value = "pageSize",defaultValue = "10")int pageSize,Long orderNo){
+    public ServerResponse<PageInfo> search(HttpSession session,
+                                           @RequestParam(value = "pageNum",defaultValue = "1") int pageNum,
+                                           @RequestParam(value = "pageSize",defaultValue = "10")int pageSize,Long orderNo){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user==null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
         }
-        return iOrderService.searchByOrderNo(pageNum,pageSize,orderNo);
+        if(iUserService.checkAdminRole(user).isSuccess()){
+            return iOrderService.searchByOrderNo(pageNum,pageSize,orderNo);
+        }
+        return ServerResponse.createByErrorMessage("当前用户没有权限");
     }
 
 
@@ -51,9 +65,25 @@ public class OrderManageController {
     @ResponseBody
     public ServerResponse<OrderDetailVo> detail(HttpSession session, Long orderNo){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
-        if(user==null) {
-            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), ResponseCode.NEED_LOGIN.getDesc());
+        if(user==null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登录,请先登录");
         }
-        return iOrderService.detail(user.getId(),orderNo);
+        if(iUserService.checkAdminRole(user).isSuccess()){
+            return iOrderService.manageDetail(orderNo);
+        }
+        return ServerResponse.createByErrorMessage("当前用户没有权限");
+    }
+
+    @RequestMapping(value = "send_goods.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<String> orderSendGoods(HttpSession session, Long orderNo){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user==null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登录,请先登录");
+        }
+        if(iUserService.checkAdminRole(user).isSuccess()){
+            return iOrderService.sendOrderGoods(orderNo);
+        }
+        return ServerResponse.createByErrorMessage("当前用户没有权限");
     }
 }

@@ -3,6 +3,7 @@ package com.mmall.service;
 import com.github.pagehelper.PageInfo;
 import com.mmall.common.ServerResponse;
 import com.mmall.vo.OrderDetailVo;
+import com.mmall.vo.OrderProductVo;
 import com.mmall.vo.OrderVo;
 
 import java.util.Map;
@@ -23,7 +24,15 @@ public interface IOrderService {
 
     ServerResponse<String> alipayCallback(Map<String,String> params);
 
-    ServerResponse<Boolean> queryOrderPayStatus(Integer userId,Long orderId);
+    ServerResponse queryOrderPayStatus(Integer userId,Long orderNo);
 
-    ServerResponse<PageInfo> searchByOrderNo(Integer pageNum,Integer pageSize,Long orderNo);
+    ServerResponse<PageInfo> searchByOrderNo(int pageNum,int pageSize,Long orderNo);
+
+    ServerResponse<PageInfo> manageList( int pageNum, int pageSize);
+
+    ServerResponse<OrderDetailVo> manageDetail(Long orderNo);
+
+    ServerResponse<String> sendOrderGoods(Long orderNo);
+
+    ServerResponse<OrderProductVo> getOrderCartProduct(Integer userId);
 }

@@ -36,4 +36,11 @@ public class BigDecimalUtil {
         return b1.divide(b2,2,BigDecimal.ROUND_HALF_UP);
         //除不尽的情况
     }
+
+    public static boolean equal(double v1, double v2){
+        BigDecimal b1 = new BigDecimal(Double.toString(v1));
+        BigDecimal b2 = new BigDecimal(Double.toString(v2));
+        return b1.equals(b2);
+        //除不尽的情况
+    }
 }

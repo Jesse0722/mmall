@@ -9,13 +9,20 @@
      http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
     <!--扫描-->
-    <context:component-scan base-package="com.mmall" annotation-config="true"/>
-
+    <context:component-scan base-package="com.mmall" annotation-config="true">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
     <!--<context:annotation-config/>-->
     <aop:aspectj-autoproxy/>
 
-
     <import resource="applicationContext-datasource.xml"/>
 
+    <!--&lt;!&ndash; 配置事务管理类&ndash;&gt;-->
+
+    <!--<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+        <!--<property name="dataSource" ref="dataSource"/>-->
+    <!--</bean>-->
+    <!--&lt;!&ndash; 开启注解事务，可以使用注解来启用事务管理&ndash;&gt;-->
+    <!--<tx:annotation-driven transaction-manager="transactionManager"/>-->
 
 </beans>

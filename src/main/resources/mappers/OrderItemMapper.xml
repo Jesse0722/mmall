@@ -27,17 +27,19 @@
     where id = #{id,jdbcType=INTEGER}
   </select>
     <select id="selectByUserIdAndOrderNo" resultMap="BaseResultMap" parameterType="map">
-      SELECT
-      <include refid="Base_Column_List"/>
-      FROM mmall_order_item
-      <where>
-      <if test="userId!=null">
-        and user_id=#{userId}
-      </if>
-      and order_no =#{orderNo}
-      </where>
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM mmall_order_item
+    WHERE user_id=#{userId}
+    and order_no =#{orderNo}
 </select>
-    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+  <select id="selectByOrderNo" resultMap="BaseResultMap">
+    SELECT
+     <include refid="Base_Column_List"/>
+    FROM mmall_order_item
+    where order_no =#{orderNo}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from mmall_order_item
     where id = #{id,jdbcType=INTEGER}
   </delete>

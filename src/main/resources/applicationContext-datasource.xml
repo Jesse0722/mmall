@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
-       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="
      http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
@@ -41,6 +43,7 @@
         <property name="maxWait" value="${db.maxWait}"/>
         <!--#给出一条简单的sql语句进行验证 -->
          <!--<property name="validationQuery" value="select getdate()" />-->
+        <!-- 自动提交 -->
         <property name="defaultAutoCommit" value="${db.defaultAutoCommit}"/>
         <!-- 回收被遗弃的（一般是忘了释放的）数据库连接到连接池中 -->
          <!--<property name="removeAbandoned" value="true" />-->
@@ -80,13 +83,13 @@
         <property name="basePackage" value="com.mmall.dao"/>
     </bean>
 
-    <!-- 使用@Transactional进行声明式事务管理需要声明下面这行 -->
-    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+
     <!-- 事务管理 -->
     <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
         <property name="dataSource" ref="dataSource"/>
         <property name="rollbackOnCommitFailure" value="true"/>
     </bean>
-
+    <!-- 使用@Transactional进行声明式事务管理需要声明下面这行 -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
 
 </beans>

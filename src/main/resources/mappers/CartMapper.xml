@@ -67,7 +67,7 @@
     <delete id="deleteBatch" parameterType="list">
       delete from mmall_cart
         where id in
-        <foreach collection="productIdList" item="item" index="index" open="(" separator="," close=")">
+        <foreach collection="cartList" item="item" index="index" open="(" separator="," close=")">
           #{item.id}
         </foreach>
     </delete>
