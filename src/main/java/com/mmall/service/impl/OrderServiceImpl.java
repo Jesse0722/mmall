@@ -89,7 +89,7 @@ public class OrderServiceImpl implements IOrderService {
 
 
     @Override
-    public ServerResponse<Map> pay(Integer userId, Long orderNo, String path) {
+    public ServerResponse<Map<String,String>> pay(Integer userId, Long orderNo, String path) {
         if(userId==null||orderNo==null||StringUtils.isBlank(path)){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
         }

@@ -12,7 +12,7 @@ import java.util.Map;
  * Created by lijiajun1-sal on 2017/6/8.
  */
 public interface IOrderService {
-    ServerResponse<Map> pay(Integer userId,Long orderNo,String path);
+    ServerResponse<Map<String,String>> pay(Integer userId,Long orderNo,String path);
 
     ServerResponse<OrderVo> create(Integer userId, Integer shippingId);
 
