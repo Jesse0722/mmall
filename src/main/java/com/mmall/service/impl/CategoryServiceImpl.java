@@ -34,7 +34,7 @@ public class CategoryServiceImpl implements ICategoryService {
         if(StringUtils.isBlank(categoryName)||parentId==null){
             return ServerResponse.createByErrorMessage("添加品类参数错误");
         }
-        if(categoryMapper.selectByPrimaryKey(parentId)==null){
+        if(parentId.intValue()!=0&&categoryMapper.selectByPrimaryKey(parentId)==null){
             return ServerResponse.createByErrorMessage("parentId不存在");
         }
         Category category = new Category();
